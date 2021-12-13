@@ -15,10 +15,14 @@ class TestBiSqlViewEditor(SingleTransactionCase):
         cls.res_partner = cls.env["res.partner"]
         cls.res_users = cls.env["res.users"]
         cls.bi_sql_view = cls.env["bi.sql.view"]
+        cls.ir_actions_server = cls.env["ir.actions.server"]
         cls.group_bi_user = cls.env.ref(
             "sql_request_abstract.group_sql_request_manager"
         )
         cls.group_user = cls.env.ref("base.group_user")
+        cls.server_action_ids = cls.env["ir.actions.server"].create(
+            {"name": "x_server_action_name", "state": "code"}
+        )
         cls.view = cls.bi_sql_view.create(
             {
                 "name": "Partners View 2",
@@ -27,6 +31,7 @@ class TestBiSqlViewEditor(SingleTransactionCase):
                 "query": "SELECT name as x_name, street as x_street,"
                 "company_id as x_company_id FROM res_partner "
                 "ORDER BY name",
+                "server_action_ids": [(6, 0, cls.server_action_ids.ids)],
             }
         )
         cls.company = cls.env.ref("base.main_company")
@@ -58,6 +63,7 @@ class TestBiSqlViewEditor(SingleTransactionCase):
         self.assertEqual(view.state, "model_valid", "state not model_valid")
         view.button_create_ui()
         self.assertEqual(view.state, "ui_valid", "state not ui_valid")
+        self.assertEqual(view.server_action_ids.model_id, view.model_id)
         view.button_update_model_access()
         self.assertEqual(view.has_group_changed, False, "has_group_changed not False")
         cron_res = view.cron_id.method_direct_trigger()
@@ -84,6 +90,12 @@ class TestBiSqlViewEditor(SingleTransactionCase):
         with self.assertRaises(UserError):
             self.view.unlink()
         self.view.button_set_draft()
+        self.assertTrue(self.view.server_action_ids)
+        self.assertFalse(self.view.server_action_ids.model_id)
         self.view.unlink()
+        server_action = self.ir_actions_server.search(
+            [("name", "=", "x_server_action_name")]
+        )
+        self.assertEqual(len(server_action), 0, "Server action not deleted")
         res = self.bi_sql_view.search([("name", "=", "Partners View 2")])
         self.assertEqual(len(res), 0, "View not deleted")

@@ -189,6 +189,12 @@ License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html).
                                 </tree>
                             </field>
                         </page>
+                        <page string="Server actions" attrs="{'invisible': [('state', 'in', ['draft', 'sql_valid'])]}">
+                            <field name="server_action_ids"
+                                   nolabel="1"
+                                   colspan="4"
+                                   context="{'default_model_id': model_id}"/>
+                        </page>
                         <page string="Security">
                             <group string="Rule Definition">
                                 <field name="domain_force" nolabel="1" colspan="4" />

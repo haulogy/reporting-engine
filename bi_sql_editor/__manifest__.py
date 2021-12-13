@@ -14,6 +14,7 @@
     "data": [
         "security/ir.model.access.csv",
         "views/view_bi_sql_view.xml",
+        "views/ir_actions_server_view.xml",
         "views/action.xml",
         "views/menu.xml",
     ],

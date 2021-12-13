@@ -195,6 +195,12 @@ class BiSQLView(models.Model):
 
     sequence = fields.Integer(string="sequence")
 
+    server_action_ids = fields.Many2many(
+        comodel_name="ir.actions.server",
+        readonly=True,
+        states={"model_valid": [("readonly", False)]},
+    )
+
     # Constrains Section
     @api.constrains("is_materialized")
     def _check_index_materialized(self):
@@ -257,6 +263,8 @@ class BiSQLView(models.Model):
                     "If you want to delete them, first set them to draft."
                 )
             )
+        if self.mapped("server_action_ids"):
+            self.mapped("server_action_ids").unlink()
         return super(BiSQLView, self).unlink()
 
     def copy(self, default=None):
@@ -289,6 +297,7 @@ class BiSQLView(models.Model):
                 sql_view.cron_id = (
                     self.env["ir.cron"].create(sql_view._prepare_cron()).id
                 )
+            sql_view.server_action_ids.write({"model_id": sql_view.model_id.id})
             sql_view.state = "model_valid"
 
     def button_set_draft(self):
@@ -299,6 +308,7 @@ class BiSQLView(models.Model):
             sql_view.graph_view_id.unlink()
             sql_view.pivot_view_id.unlink()
             sql_view.search_view_id.unlink()
+            sql_view.server_action_ids.unlink_action()
             if sql_view.cron_id:
                 sql_view.cron_id.unlink()
 
@@ -307,9 +317,10 @@ class BiSQLView(models.Model):
                 if sql_view.is_materialized:
                     sql_view._drop_view()
 
+                # Avoid the on cascade delete
+                sql_view.server_action_ids.write({"model_id": False})
                 # Drop ORM
                 sql_view._drop_model_and_fields()
-
             sql_view.write({"state": "draft", "has_group_changed": False})
 
     def button_create_ui(self):
@@ -327,6 +338,7 @@ class BiSQLView(models.Model):
             self.env["ir.actions.act_window"].create(self._prepare_action()).id
         )
         self.menu_id = self.env["ir.ui.menu"].create(self._prepare_menu()).id
+        self.server_action_ids.create_action()
         self.write({"state": "ui_valid"})
 
     def button_update_model_access(self):
