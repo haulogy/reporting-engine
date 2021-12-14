@@ -63,7 +63,6 @@ class TestBiSqlViewEditor(SingleTransactionCase):
         self.assertEqual(view.state, "model_valid", "state not model_valid")
         view.button_create_ui()
         self.assertEqual(view.state, "ui_valid", "state not ui_valid")
-        self.assertEqual(view.server_action_ids.model_id, view.model_id)
         view.button_update_model_access()
         self.assertEqual(view.has_group_changed, False, "has_group_changed not False")
         cron_res = view.cron_id.method_direct_trigger()
@@ -90,6 +89,13 @@ class TestBiSqlViewEditor(SingleTransactionCase):
         with self.assertRaises(UserError):
             self.view.unlink()
         self.view.button_set_draft()
+
+        self.assertNotEqual(
+            self.view.cron_id,
+            False,
+            "Set to draft materialized view should" " not unlink cron",
+        )
+
         self.assertTrue(self.view.server_action_ids)
         self.assertFalse(self.view.server_action_ids.model_id)
         self.view.unlink()
