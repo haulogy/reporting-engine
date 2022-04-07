@@ -499,7 +499,7 @@ class BiSQLView(models.Model):
 
     # Custom Section
     def _log_execute(self, req):
-        _logger.info("Executing SQL Request %s ..." % req)
+        _logger.debug("Executing SQL Request %s ..." % req)
         self.env.cr.execute(req)
 
     def _drop_view(self):
